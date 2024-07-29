@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source /etc/kubecube/manifests/utils.sh
-source /etc/kubecube/manifests/install.conf
+source /etc/kubeworkz/manifests/utils.sh
+source /etc/kubeworkz/manifests/install.conf
 
 if [ $(kubectl get nodes | wc -l) -eq 2 ]
 then
@@ -15,7 +15,7 @@ if [ ! -z ${KUBERNETES_BIND_ADDRESS} ]; then
 fi
 
 function render_values() {
-  clog info "render pivot values for kubecube chart values"
+  clog info "render pivot values for kubeworkz chart values"
 cat > render-values.yaml <<EOF
 # pivot-value.yaml
 
@@ -23,7 +23,7 @@ global:
   # control-plane node IP which is used for exporting NodePort svc.
   nodeIP: ${IPADDR}
 
-  dependencesEnable:
+  dependenciesEnable:
     ingressController: "${INGRESS_CONTROLLER_ENABLE}" # set "true" to deploy if ingress is not already in cluster.
     localPathStorage: "${LOCAL_PATH_STORAGE_ENABLE}"
     metricServer: "${METRIC_SERVER_ENABLE}"
@@ -41,6 +41,6 @@ EOF
 
 render_values
 
-clog info "deploy kubecube"
-/usr/local/bin/helm install kubecube -n ${INSTALL_NAMESPACE} --create-namespace /etc/kubecube/kubecube-chart -f ./render-values.yaml
+clog info "deploy kubeworkz"
+/usr/local/bin/helm install kubeworkz -n ${INSTALL_NAMESPACE} --create-namespace /etc/kubeworkz/kubeworkz-chart -f ./render-values.yaml
 

@@ -5,22 +5,22 @@ set -o pipefail
 
 OPT=$1
 
-function kubecube_uninstall() {
-  clog info "uninstalling kubecube"
+function kubeworkz_uninstall() {
+  clog info "uninstalling kubeworkz"
 
-  clog debug "remove kubecube files"
-  rm -rf /etc/kubecube
+  clog debug "remove kubeworkz files"
+  rm -rf /etc/kubeworkz
 
-  clog debug "uninstall kubecueb helm chart release"
-  kubectl delete validatingwebhookconfigurations kubecube-validating-webhook-configuration warden-validating-webhook-configuration kubecube-monitoring-admission || true
+  clog debug "uninstall kubeworkz helm chart release"
+  kubectl delete validatingwebhookconfigurations kubeworkz-validating-webhook-configuration warden-validating-webhook-configuration kubeworkz-monitoring-admission || true
   kubectl delete cluster --all || true
-  helm uninstall kubecube -n kubecube-system || true
-  kubectl delete ns kubecube-system hnc-system kubecube-monitoring || true
+  helm uninstall kubeworkz -n kubeworkz-system || true
+  kubectl delete ns kubeworkz-system hnc-system kubeworkz-monitoring || true
 
   clog warn "make sure namespace ingress-nginx has been terminated by: kubectl get ns ingress-nginx"
-  clog warn "manually delete monitoring if you do not need it by: kubectl delete ns kubecube-monitoring"
+  clog warn "manually delete monitoring if you do not need it by: kubectl delete ns kubeworkz-monitoring"
 
-  clog info "kubecube uninstall success"
+  clog info "kubeworkz uninstall success"
 }
 
 function kubernetes_uninstall() {
@@ -121,7 +121,7 @@ function clog() {
 
 function main() {
   case ${OPT} in
-    "kubecube") kubecube_uninstall
+    "kubeworkz") kubeworkz_uninstall
     ;;
     "k8s") kubernetes_uninstall
     ;;
@@ -131,14 +131,14 @@ function main() {
     "containerd") containerd_uninstall
     ;;
     "all")
-      kubecube_uninstall
+      kubeworkz_uninstall
       kubernetes_uninstall
       docker_uninstall
       containerd_uninstall
       cri_dockerd_uninstall
     ;;
     *)
-      echo "unknown params, only support: 'kubecube','k8s','docker','containerd','all'"
+      echo "unknown params, only support: 'kubeworkz','k8s','docker','containerd','all'"
     ;;
   esac
 }

@@ -6,5 +6,5 @@
 # v1.3.0
 
 ## Feature
-- remove kubecube chart
+- remove kubework chart
 - clean up useless scripts

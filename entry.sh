@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ ${UID} -ne 0 ];then
-  echo -e "$(date +'%Y-%m-%d %H:%M:%S') \033[32mINFO\033[0m please use root to execute install shell"
+  echo -e "$(date +'%Y-%m-%d %H:%M:%S') \033[32mINFO\033[0m you must be root to execute install shell"
   exit 1
 fi
 
@@ -51,7 +51,7 @@ function env_check() {
     echo -e "\033[32m|---------------------------------------------------------------------|\033[0m"
 
     if [ ${env_ok} = false ]; then
-        echo -e "$(date +'%Y-%m-%d %H:%M:%S') \033[32mINFO\033[0m lack of dependencies, ensure them"
+        echo -e "$(date +'%Y-%m-%d %H:%M:%S') \033[32mINFO\033[0m missing dependencies, ensure all are present"
         exit 1
     fi
 }
@@ -63,27 +63,27 @@ mkdir -p /etc/kubeworkz/bin
 cd /etc/kubeworkz
 
 if [ -e "./manifests" ]; then
-  echo -e "$(date +'%Y-%m-%d %H:%M:%S') \033[32mINFO\033[0m manifests and kubeworkz-chart already exists"
+  echo -e "$(date +'%Y-%m-%d %H:%M:%S') \033[32mINFO\033[0m manifests and kubeworkz-chart already exist"
 else
   echo -e "$(date +'%Y-%m-%d %H:%M:%S') \033[32mINFO\033[0m downloading manifests for kubeworkz"
-  wget https://kubecube.nos-eastchina1.126.net/kubecube-installer/release/v1.3/manifests.tar.gz -O manifests.tar.gz
+  wget https://kubeworkz.s3.amazonaws.com/kubeworkz-installer/release/v1.3/manifests.tar.gz -O manifests.tar.gz
   tar -xzvf manifests.tar.gz > /dev/null
 
   echo -e "$(date +'%Y-%m-%d %H:%M:%S') \033[32mINFO\033[0m downloading kubeworkz-chart ${KUBEWORKZ_VERSION}"
-  wget https://kubecube.nos-eastchina1.126.net/kubecube-chart/${KUBECUBE_VERSION}/kubecube-chart.tar.gz -O kubecube-chart.tar.gz
-  tar -xzvf kubecube-chart.tar.gz > /dev/null
+  wget https://kubeworkz.s3.amazonaws.com/kubeworkz-chart/${KUBEWORKZ_VERSION}/kubeworkz-chart.tar.gz -O kubeworkz-chart.tar.gz
+  tar -xzvf kubeworkz-chart.tar.gz > /dev/null
 fi
 
 if [[ ${CUSTOMIZE} = "true" ]]; then
-  echo -e "\033[32m================================================\033[0m"
-  echo -e "\033[32m 1. Please make sure under kubecube folder      \033[0m"
-  echo -e "\033[32m 'cd /etc/kubecube/manifests'                   \033[0m"
-  echo -e "\033[32m 2. Please modify install.conf                  \033[0m"
-  echo -e "\033[32m 'vi install.conf'                              \033[0m"
-  echo -e "\033[32m 3. Confirm every args then do command below:   \033[0m"
-  echo -e "\033[32m '/bin/bash install.sh'                         \033[0m"
-  echo -e "\033[32m================================================\033[0m"
+  echo -e "\033[32m====================================================\033[0m"
+  echo -e "\033[32m 1. Make sure you are in the kubeworkz folder       \033[0m"
+  echo -e "\033[32m 'cd /etc/kubeworkz/manifests'                      \033[0m"
+  echo -e "\033[32m 2. Please modify install.conf                      \033[0m"
+  echo -e "\033[32m 'vi install.conf'                                  \033[0m"
+  echo -e "\033[32m 3. Confirm all args then execute:                  \033[0m"
+  echo -e "\033[32m '/bin/bash install.sh'                             \033[0m"
+  echo -e "\033[32m====================================================\033[0m"
   exit 0
 fi
 
-/bin/bash /etc/kubecube/manifests/install.sh
+/bin/bash /etc/kubeworkz/manifests/install.sh

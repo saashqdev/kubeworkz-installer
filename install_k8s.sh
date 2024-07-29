@@ -3,13 +3,12 @@
 set -e
 
 DOCKER_VER=19.03.8
-BASE="/etc/kubecube"
+BASE="/etc/kubeworkz"
 K8S_REGISTR="k8s.gcr.io"
-CN_K8S_REGISTR="registry.cn-hangzhou.aliyuncs.com/google_containers"
 CRI_DOCKERD_VERSION=0.3.0
 
-source /etc/kubecube/manifests/install.conf
-source /etc/kubecube/manifests/utils.sh
+source /etc/kubeworkz/manifests/install.conf
+source /etc/kubeworkz/manifests/utils.sh
 
 RELEASE=v${KUBERNETES_VERSION}
 
@@ -17,7 +16,7 @@ function docker_bin_get() {
   systemctl status docker|grep Active|grep -q running && { clog warn "docker is already running."; return 0; }
 
   if [[ -f "$BASE/down/docker-${DOCKER_VER}.tgz" ]];then
-    clog warn "docker binaries already existed"
+    clog warn "docker binaries already exist"
   else
     if [[ "$OFFLINE_INSTALL" == "true" ]]; then
       clog info "get docker binary from local"
@@ -34,12 +33,7 @@ function docker_bin_get() {
 }
 
 function docker_bin_download() {
-  if [[ "$ZONE" == cn ]];then
-    DOCKER_URL="https://kubecube.nos-eastchina1.126.net/docker-ce/linux/static/stable/$(arch)/docker-${DOCKER_VER}.tgz"
-    #DOCKER_URL="https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/static/stable/$(arch)/docker-${DOCKER_VER}.tgz"
-  else
-    DOCKER_URL="https://download.docker.com/linux/static/stable/$(arch)/docker-${DOCKER_VER}.tgz"
-  fi
+  DOCKER_URL="https://download.docker.com/linux/static/stable/$(arch)/docker-${DOCKER_VER}.tgz"
 
   clog info "downloading docker binaries, version $DOCKER_VER"
   if [[ -e /usr/bin/curl ]];then
@@ -146,15 +140,11 @@ EOF
 
   if [[ $(arch) == x86_64 ]]; then
   clog debug "generate docker config: /etc/docker/daemon.json"
-  if [[ "$ZONE" == cn ]];then
-    clog debug "prepare register mirror for $ZONE"
-    cat > /etc/docker/daemon.json << EOF
+
+  clog debug "standard config without registry mirrors"
+  cat > /etc/docker/daemon.json << EOF
 {
   "exec-opts": ["native.cgroupdriver=$CGROUP_DRIVER"],
-  "registry-mirrors": [
-    "https://docker.mirrors.ustc.edu.cn",
-    "http://hub-mirror.c.163.com"
-  ],
   "max-concurrent-downloads": 10,
   "log-driver": "json-file",
   "log-level": "warn",
@@ -180,43 +170,6 @@ EOF
   "data-root": "/var/lib/docker"
 }
 EOF
-  fi
-  else
-  if [[ "$ZONE" == cn ]];then
-    clog debug "prepare register mirror for $ZONE"
-    cat > /etc/docker/daemon.json << EOF
-{
-  "exec-opts": ["native.cgroupdriver=$CGROUP_DRIVER"],
-  "registry-mirrors": [
-    "https://docker.mirrors.ustc.edu.cn",
-    "http://hub-mirror.c.163.com"
-  ],
-  "max-concurrent-downloads": 10,
-  "log-driver": "json-file",
-  "log-level": "warn",
-  "log-opts": {
-    "max-size": "10m",
-    "max-file": "3"
-    },
-  "data-root": "/var/lib/docker"
-}
-EOF
-  else
-    clog debug "standard config without registry mirrors"
-    cat > /etc/docker/daemon.json << EOF
-{
-  "exec-opts": ["native.cgroupdriver=$CGROUP_DRIVER"],
-  "max-concurrent-downloads": 10,
-  "log-driver": "json-file",
-  "log-level": "warn",
-  "log-opts": {
-    "max-size": "10m",
-    "max-file": "3"
-    },
-  "data-root": "/var/lib/docker"
-}
-EOF
-  fi
   fi
 
   # start docker service
@@ -233,15 +186,15 @@ EOF
 
 function containerd_installed(){
   CONTAINERD_VERSION=1.5.5
-  # if docker exist, then exit
+  # if docker exists, then exit
   if command -v docker >/dev/null 2>&1; then
-    clog info 'exists docker, please remove docker, or update CONTAINER_RUNTIME value as docker in install.conf `'
+    clog info 'docker exists, please remove docker, or update CONTAINER_RUNTIME value as docker in install.conf `'
     return
   fi
   systemctl disable docker --now || true
 
   if command -v ctr >/dev/null 2>&1; then
-    clog info 'exists containerd'
+    clog info 'containerd exists'
     return
   fi
 
@@ -250,14 +203,14 @@ function containerd_installed(){
     os_arch="arm64"
   fi
 
-  wget https://kubecube.nos-eastchina1.126.net/containerd/"$CONTAINERD_VERSION"/containerd-"$CONTAINERD_VERSION"-linux-$os_arch.tar.gz -O containerd.tar.gz
+  wget https://kubeworkz.s3.amazonaws.com/containerd/"$CONTAINERD_VERSION"/containerd-"$CONTAINERD_VERSION"-linux-$os_arch.tar.gz -O containerd.tar.gz
 
   tar -C / -xzf containerd.tar.gz
   rm -rf containerd.tar.gz
   if command -v ctr >/dev/null 2>&1; then
-    clog info "install containerd success"
+    clog info "containerd installed successfully"
   else
-    clog error "install containerd fail"
+    clog error "containerd install failed"
     exit 1
   fi
 }
@@ -285,18 +238,11 @@ EOF
   sed -i '/containerd.runtimes.runc.options/a\ \ \ \ \ \ \ \ \ \ \ \ SystemdCgroup = true' /etc/containerd/config.toml
   systemctl daemon-reload
   systemctl enable containerd --now || true
-
-  #configuration pause
-  if [[ "$ZONE" == cn ]];then
-    sed -i 's|k8s.gcr.io/pause|registry.cn-hangzhou.aliyuncs.com/k8sxio/pause|' /etc/containerd/config.toml
-    ctr -n k8s.io i pull registry.cn-hangzhou.aliyuncs.com/k8sxio/pause:3.5 || true
-    ctr -n k8s.io i tag registry.cn-hangzhou.aliyuncs.com/k8sxio/pause:3.5 k8s.gcr.io/pause:3.5 || true
-  fi
 }
 
 
 function k8s_bin_get() {
-  [[ (-f "/usr/local/bin/kubelet") && (-f "/usr/local/bin/kubeadm") && (-f "/usr/local/bin/kubectl") && (-f "/usr/local/bin/crictl") ]] && { clog warn "kubernetes binaries existed"; return 0; }
+  [[ (-f "/usr/local/bin/kubelet") && (-f "/usr/local/bin/kubeadm") && (-f "/usr/local/bin/kubectl") && (-f "/usr/local/bin/crictl") ]] && { clog warn "kubernetes binaries already exist"; return 0; }
 
   os_arch="amd64"
   if [[ $(arch) == aarch64 ]]; then
@@ -352,39 +298,22 @@ function k8s_bin_download() {
 
   clog debug "downloading cni plugin"
 
-  if [[ "$ZONE" == cn ]];then
-    curl -L "https://kubecube.nos-eastchina1.126.net/containernetworking/${CNI_VERSION}/cni-plugins-linux-${os_arch}-${CNI_VERSION}.tgz" | tar -C /opt/cni/bin -xz
+  curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${os_arch}-${CNI_VERSION}.tgz" | tar -C /opt/cni/bin -xz
 
-    clog debug "downloading crictl"
-    curl -L "https://kubecube.nos-eastchina1.126.net/cri-tools/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${os_arch}.tar.gz" | tar -C $DOWNLOAD_DIR -xz
+  clog debug "downloading crictl"
+  curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${os_arch}.tar.gz" | tar -C $DOWNLOAD_DIR -xz
 
-    clog debug "downloading kubeadm,kubelet,kubectl"
-#    RELEASE=v${KUBERNETES_VERSION}
-    cd $DOWNLOAD_DIR
-    curl -L --remote-name-all https://kubecube.nos-eastchina1.126.net/kubernetes/${RELEASE}/bin/linux/${os_arch}/{kubeadm,kubelet,kubectl}
-    chmod +x {kubeadm,kubelet,kubectl}
+  clog debug "downloading kubeadm,kubelet,kubectl"
 
-    clog debug "config for kubelet service"
-#    RELEASE_VERSION="v0.4.0"
-    curl -sSL "https://kubecube.nos-eastchina1.126.net/githubusercontent/kubernetes/${RELEASE_VERSION}/cmd/kubepkg/templates/latest/deb/kubelet/lib/systemd/system/kubelet.service" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | tee /etc/systemd/system/kubelet.service
-    curl -sSL "https://kubecube.nos-eastchina1.126.net/githubusercontent/kubernetes/${RELEASE_VERSION}/cmd/kubepkg/templates/latest/deb/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | tee /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-  else
-    curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${os_arch}-${CNI_VERSION}.tgz" | tar -C /opt/cni/bin -xz
+  RELEASE=v${KUBERNETES_VERSION}
+  cd $DOWNLOAD_DIR
+  curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/${os_arch}/{kubeadm,kubelet,kubectl}
+  chmod +x {kubeadm,kubelet,kubectl}
 
-    clog debug "downloading crictl"
-    curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${os_arch}.tar.gz" | tar -C $DOWNLOAD_DIR -xz
-
-    clog debug "downloading kubeadm,kubelet,kubectl"
-#    RELEASE=v${KUBERNETES_VERSION}
-    cd $DOWNLOAD_DIR
-    curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/${os_arch}/{kubeadm,kubelet,kubectl}
-    chmod +x {kubeadm,kubelet,kubectl}
-
-    clog debug "config for kubelet service"
-#    RELEASE_VERSION="v0.4.0"
-    curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/kubepkg/templates/latest/deb/kubelet/lib/systemd/system/kubelet.service" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | tee /etc/systemd/system/kubelet.service
-    curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/kubepkg/templates/latest/deb/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | tee /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-  fi
+  clog debug "config for kubelet service"
+  # RELEASE_VERSION="v0.4.0"
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/kubepkg/templates/latest/deb/kubelet/lib/systemd/system/kubelet.service" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | tee /etc/systemd/system/kubelet.service
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/kubepkg/templates/latest/deb/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | tee /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
   if [[ "$CONTAINER_RUNTIME" == "docker" ]] ;then
     firstVersion=$(echo "$KUBERNETES_VERSION" | awk -F '.' '{{print $1}}')
@@ -399,7 +328,7 @@ function cri_dockerd_install() {
     systemctl status cri-docker|grep Active|grep -q running && { clog warn "cri-docker is already running."; return 0; }
     clog info "start install cri docker"
     cd $DOWNLOAD_DIR
-    curl -L --remote-name-all https://kubecube.nos-eastchina1.126.net/cri-dockerd/${CRI_DOCKERD_VERSION}/${os_arch}/{cri-docker.service,cri-docker.socket,cri-dockerd}
+    curl -L --remote-name-all https://kubeworkz.s3.amazonaws.com/cri-dockerd/${CRI_DOCKERD_VERSION}/${os_arch}/{cri-docker.service,cri-docker.socket,cri-dockerd}
     clog info "get cri docker end"
     chmod +x cri-dockerd
     mv cri-dockerd /usr/local/bin/cri-dockerd || true
@@ -422,7 +351,7 @@ function images_download() {
 
       # download k8s images
       if [[ "$INSTALL_KUBERNETES" == "true" ]]; then
-        for image in $(cat /etc/kubecube/manifests/images/k8s/v${KUBERNETES_VERSION}/images.list)
+        for image in $(cat /etc/kubeworkz/manifests/images/k8s/v${KUBERNETES_VERSION}/images.list)
         do
             if [[ ${CONTAINER_RUNTIME} = "containerd" ]]; then
                  clog debug "pulling image ${image}"
@@ -430,15 +359,15 @@ function images_download() {
             elif [[ ${CONTAINER_RUNTIME} = "docker" ]]; then
                  /usr/bin/docker pull "${image}"
             else
-              clog error "container_runtime error, only support docker and containerd now!"
+              clog error "container_runtime error, only docker and containerd supported!"
               exit 1
             fi
         done
       fi
 
-      # todo: downloads image need by cube pivot cluster
-      if [[ "$INSTALL_KUBECUBE_PIVOT" == "true" ]]; then
-        for image in $(cat /etc/kubecube/kubecube-chart/images.list)
+      # todo: download image needed by kube pivot cluster
+      if [[ "$INSTALL_KUBEWORKZ_PIVOT" == "true" ]]; then
+        for image in $(cat /etc/kubeworkz/kubeworkz-chart/images.list)
         do
             if [[ ${CONTAINER_RUNTIME} = "containerd" ]]; then
                  clog debug "pulling image ${image}"
@@ -446,7 +375,7 @@ function images_download() {
             elif [[ ${CONTAINER_RUNTIME} = "docker" ]]; then
                  /usr/bin/docker pull "${image}"
             else
-              clog error "container_runtime error, only support docker and containerd now!"
+              clog error "container_runtime error, only docker and containerd supported!"
               exit 1
             fi
         done
@@ -477,13 +406,9 @@ EOF
 function make_cluster_configuration (){
   clog info "make configuration for kubeadm"
 
-  mkdir -p /etc/cube/kubeadm
+  mkdir -p /etc/kube/kubeadm
 
   REGISTRY=${K8S_REGISTR}
-  if [[ "$ZONE" == cn ]];then
-    REGISTRY=${CN_K8S_REGISTR}
-  fi
-
   if [ ! -z ${KUBERNETES_BIND_ADDRESS} ]; then
     clog info "use customize k8s bind address ${KUBERNETES_BIND_ADDRESS}"
     IPADDR=${KUBERNETES_BIND_ADDRESS}
@@ -498,8 +423,7 @@ scheduler:
   extraArgs:
     bind-address: ${IPADDR}
 imageRepository: ${REGISTRY}
-EOF
-)
+EOF)
 # enable metrics endpoint on all interfaces
 KUBE_PROXY_CONF=$(cat <<- EOF
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
@@ -509,11 +433,11 @@ EOF
 )
 
 if [ -z ${CONTROL_PLANE_ENDPOINT} ]; then
-  clog debug "vip not be set, use node ip"
+  clog debug "vip not set, use node ip"
   CONTROL_PLANE_ENDPOINT=${IPADDR}
 fi
 
-cat >/etc/cube/kubeadm/init.config <<EOF
+cat >/etc/kube/kubeadm/init.config <<EOF
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
 kubernetesVersion: ${KUBERNETES_VERSION}
@@ -526,12 +450,12 @@ EOF
 
 function Install_Kubernetes_Master (){
   clog info "init kubernetes, version: ${KUBERNETES_VERSION}"
-  mv /etc/cube/kubeadm/init.config /etc/cube/kubeadm/old.config
-  kubeadm config migrate --old-config /etc/cube/kubeadm/old.config --new-config /etc/cube/kubeadm/init.config
+  mv /etc/kube/kubeadm/init.config /etc/kube/kubeadm/old.config
+  kubeadm config migrate --old-config /etc/kube/kubeadm/old.config --new-config /etc/kube/kubeadm/init.config
   if [ ${NODE_MODE} = "master" ];then
-    kubeadm init --config=/etc/cube/kubeadm/init.config
+    kubeadm init --config=/etc/kube/kubeadm/init.config
   elif [ ${NODE_MODE} = "control-plane-master" ];then
-    kubeadm init --config=/etc/cube/kubeadm/init.config --upload-certs
+    kubeadm init --config=/etc/kube/kubeadm/init.config --upload-certs
   fi
 
   mkdir -p ${HOME}/.kube
@@ -539,7 +463,7 @@ function Install_Kubernetes_Master (){
   chown $(id -u):$(id -g) ${HOME}/.kube/config
 
   clog debug "installing cni ${CNI}"
-  kubectl apply -f /etc/kubecube/manifests/cni/${CNI}/${RELEASE} > /dev/null
+  kubectl apply -f /etc/kubeworkz/manifests/cni/${CNI}/${RELEASE} > /dev/null
 
   sleep 7 >/dev/null
   clog debug "inspect node"
@@ -600,8 +524,8 @@ function Install_Kubernetes_Node (){
 }
 
 function Main() {
-  mkdir -p /etc/kubecube/down
-  mkdir -p /etc/kubecube/bin
+  mkdir -p /etc/kubeworkz/down
+  mkdir -p /etc/kubeworkz/bin
 
   if [[ ${CONTAINER_RUNTIME} = "containerd" ]]; then
     containerd_installed

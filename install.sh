@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source /etc/kubecube/manifests/utils.sh
-source /etc/kubecube/manifests/install.conf
+source /etc/kubeworkz/manifests/utils.sh
+source /etc/kubeworkz/manifests/install.conf
 
 system_info
 
@@ -10,7 +10,7 @@ function params_process() {
   # check NODE_MODE
   if [ -z ${NODE_MODE} ]
   then
-    clog error "NODE_MODE can not be empty!"
+    clog error "NODE_MODE cannot be empty!"
     exit 1
   else
     NODE_MODE_LEGAL="false"
@@ -43,11 +43,6 @@ function params_process() {
     fi
   fi
 
-  # check ZONE
-  if [ -z ${ZONE} ]; then
-    ZONE="ch"
-  fi
-
   if [ ! -z ${KUBERNETES_BIND_ADDRESS} ]; then
     IPADDR=${KUBERNETES_BIND_ADDRESS}
   fi
@@ -57,7 +52,7 @@ params_process
 
 # install k8s or not
 if [[ ${INSTALL_KUBERNETES} = "true" ]]; then
-  /bin/bash /etc/kubecube/manifests/install_k8s.sh
+  /bin/bash /etc/kubeworkz/manifests/install_k8s.sh
   if [ "$?" -ne 0 ]; then
     clog error "install kubernetes failed"
       exit 1
@@ -69,8 +64,8 @@ if [[ ${INSTALL_KUBERNETES} = "true" ]]; then
   fi
 fi
 
-if [[ ${INSTALL_KUBECUBE_PIVOT} = "true" ]]; then
-# download helm to install kubecube helm chart
+if [[ ${INSTALL_KUBEWORKZ_PIVOT} = "true" ]]; then
+# download helm to install kubeworkz helm chart
 helm_download
-/bin/bash /etc/kubecube/manifests/install_kubecube.sh
+/bin/bash /etc/kubeworkz/manifests/install_kubeworkz.sh
 fi

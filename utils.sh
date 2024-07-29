@@ -51,8 +51,8 @@ function clog() {
 
 # init_etcd_secret create etcd secret for monitoring at first
 function init_etcd_secret (){
-  kubectl create namespace kubecube-monitoring --dry-run=client -o yaml | kubectl apply -f -
-  kubectl create secret generic etcd-certs -n kubecube-monitoring --dry-run=client -o yaml \
+  kubectl create namespace kubeworkz-monitoring --dry-run=client -o yaml | kubectl apply -f -
+  kubectl create secret generic etcd-certs -n kubeworkz-monitoring --dry-run=client -o yaml \
   --from-file=ca.crt=/etc/kubernetes/pki/ca.crt \
   --from-file=client.crt=/etc/kubernetes/pki/apiserver-etcd-client.crt \
   --from-file=client.key=/etc/kubernetes/pki/apiserver-etcd-client.key | kubectl apply -f -
@@ -89,7 +89,7 @@ function wait_pod_ready() {
     local pod_namespace=$2
     local wait_timeout=$3
 
-    echo "wait the $pod_label ready..."
+    echo "wait until the $pod_label is ready..."
     set +e
     util::kubectl_with_retry wait --for=condition=Ready --timeout=30s pods -l app=${pod_label} -n ${pod_namespace}
     ret=$?
@@ -126,12 +126,12 @@ function kubectl_with_retry() {
 function helm_download() {
   clog info "download helm bin"
   if [[ $(arch) == x86_64 ]]; then
-    wget https://kubecube.nos-eastchina1.126.net/helm/helm-v3.5.4-linux-amd64.tar.gz -O helm.tar.gz
+    wget https://kubeworkz.s3.amazonaws.com/helm/helm-v3.5.4-linux-amd64.tar.gz -O helm.tar.gz
     tar -xzvf helm.tar.gz > /dev/null
     chmod +x linux-amd64/helm
     mv linux-amd64/helm /usr/local/bin/helm
   else
-    wget https://kubecube.nos-eastchina1.126.net/helm/helm-v3.6.2-linux-arm64.tar.gz -O helm.tar.gz
+    wget https://kubeworkz.s3.amazonaws.com/helm/helm-v3.6.2-linux-arm64.tar.gz -O helm.tar.gz
     tar -xzvf helm.tar.gz > /dev/null
     chmod +x linux-arm64/helm
     mv linux-arm64/helm /usr/local/bin/helm
@@ -148,7 +148,7 @@ function sign_cert() {
 
   clog debug "generate ca key and ca cert"
   openssl genrsa -out ca.key 2048 > /dev/null
-  openssl req -x509 -new -nodes -key ca.key -subj "/CN=*.kubecube-system" -days 10000 -out ca.crt > /dev/null
+  openssl req -x509 -new -nodes -key ca.key -subj "/CN=*.kubeworkz-system" -days 10000 -out ca.crt > /dev/null
 
   clog debug "generate tls key"
   openssl genrsa -out tls.key 2048 > /dev/null
@@ -163,10 +163,7 @@ req_extensions = req_ext
 distinguished_name = dn
 
 [ dn ]
-C = ch
-ST = zj
-L = hz
-O = kubecube
+O = kubeworkz
 CN = *.${ns}
 
 [ req_ext ]
