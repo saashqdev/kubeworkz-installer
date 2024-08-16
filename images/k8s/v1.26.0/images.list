@@ -2,10 +2,10 @@ docker.io/kubeworkz/calico-node:v3.24.5-m
 docker.io/kubeworkz/calico-cni:v3.24.5-m
 docker.io/kubeworkz/calico-pod2daemon-flexvol:v3.24.5-m
 docker.io/kubeworkz/calico-kube-controllers:v3.24.5-m
-us.gcr.io/k8s-artifacts-prod/kube-apiserver-amd64:v1.26.0
-us.gcr.io/k8s-artifacts-prod/kube-controller-manager-amd64:v1.26.0
-us.gcr.io/k8s-artifacts-prod/kube-scheduler-amd64:v1.26.0
-us.gcr.io/k8s-artifacts-prod/kube-proxy-amd64:v1.26.0
-docker.io/docker/desktop-kubernetes-pause:3.9
-docker.io/opsdockerimage/kubernetes-etcd:3.5.6-0
-docker.io/coredns/coredns:1.9.3
+docker.io/kubeworkz/kube-apiserver:v1.26.0
+docker.io/kubeworkz/kube-controller-manager:v1.26.0
+docker.io/kubeworkz/kube-scheduler:v1.26.0
+docker.io/kubeworkz/kube-proxy:v1.26.0
+docker.io/kubeworkz/pause:v3.9
+docker.io/kubeworkz/etcd:v3.5.6-0
+docker.io/kubeworkz/coredns:v1.9.3

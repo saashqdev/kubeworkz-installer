@@ -2,10 +2,10 @@ docker.io/kubeworkz/calico-node:v3.24.5-m
 docker.io/kubeworkz/calico-cni:v3.24.5-m
 docker.io/Kubeworkz/calico-pod2daemon-flexvol:v3.24.5-m
 docker.io/kubeworkz/calico-kube-controllers:v3.24.5-m
-gcr.io/google-containers/kube-apiserver:v1.25.3
-gcr.io/google-containers/kube-controller-manager:v1.25.3
-gcr.io/google-containers/kube-scheduler:v1.25.3
-gcr.io/google-containers/kube-proxy:v1.25.3
-gcr.io/google-containers/pause:3.9
-gcr.io/google-containers/etcd:3.5.6-0
-gcr.io/google-containers/coredns:v1.9.3
+docker.io/kubeworkz/kube-apiserver:v1.25.3
+docker.io/kubeworkz/kube-controller-manager:v1.25.3
+docker.io/kubeworkz/kube-scheduler:v1.25.3
+docker.io/kubeworkz/kube-proxy:v1.25.3
+docker.io/kubeworkz/pause:v3.9
+docker.io/kubeworkz/etcd:v3.5.6-0
+docker.io/kubeworkz/coredns:v1.9.3
