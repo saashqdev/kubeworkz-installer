@@ -185,7 +185,7 @@ EOF
 }
 
 function containerd_installed(){
-  CONTAINERD_VERSION=1.5.5
+  CONTAINERD_VERSION=1.6.12
   # if docker exists, then exit
   if command -v docker >/dev/null 2>&1; then
     clog info 'docker exists, please remove docker, or update CONTAINER_RUNTIME value as docker in install.conf `'
