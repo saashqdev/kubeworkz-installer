@@ -4,7 +4,7 @@ set -e
 
 DOCKER_VER=19.03.8
 BASE="/etc/kubeworkz"
-K8S_REGISTR="us.gcr.io"
+K8S_REGISTR="kubeworkz"
 CRI_DOCKERD_VERSION=0.3.0
 
 source /etc/kubeworkz/manifests/install.conf
