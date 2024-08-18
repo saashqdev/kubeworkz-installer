@@ -423,7 +423,9 @@ scheduler:
   extraArgs:
     bind-address: ${IPADDR}
 imageRepository: ${REGISTRY}
-EOF)
+EOF
+)
+
 # enable metrics endpoint on all interfaces
 KUBE_PROXY_CONF=$(cat <<- EOF
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
