@@ -10,6 +10,11 @@ Set version
 export KUBEWORKZ_VERSION=v1.8
 ```
 
+Install required apps
+```bash
+apt install sshpass conntrack unzip socat
+```
+
 ### All in one install
 
 ```bash
