@@ -4,6 +4,10 @@ Kubeworkz installer installs Kubeworkz by the "all-in-one" method. More details 
 
 ## Quick start
 
+Grab a cloud box from your favorite hyperscaler - `4 cores / 8Gb RAM / 120Gb`
+
+Do everything as `root`
+
 Set version
 
 ```bash
