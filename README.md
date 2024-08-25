@@ -1,6 +1,6 @@
 # Kubeworkz-Installer
 
-Kubeworkz installer installs Kubeworkz by the "all-in-one" method. More details follow [doc](https://kubeworkz.io/docs/installation-guide/).
+Kubeworkz installer installs Kubeworkz by the "all-in-one" method. More details follow [doc](https://kubeworkz.io/docs/installation-guide/) (coming soon).
 
 ## Quick start
 
